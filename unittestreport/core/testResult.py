@@ -156,6 +156,7 @@ class ReRunResult(TestResult):
     def startTest(self, test):
         if not hasattr(test, "count"):
             super().startTest(test)
+        test.images = getattr(test, "images", [])
 
     def stopTest(self, test):
         if test not in self.run_cases:
@@ -178,6 +179,7 @@ class ReRunResult(TestResult):
             super().addFailure(test, err)
             if test.count != 0:
                 sys.stderr.write("================重运行{}次完毕================\n".format(test.count))
+        self._add_screen_shot_in_test(test)
 
     def addError(self, test, err):
         if not hasattr(test, 'count'):
@@ -194,3 +196,12 @@ class ReRunResult(TestResult):
             super().addError(test, err)
             if test.count != 0:
                 sys.stderr.write("================重运行{}次完毕================\n".format(test.count))
+        self._add_screen_shot_in_test(test)
+
+    def _add_screen_shot_in_test(self, test):
+        if type(getattr(test, "driver", "")).__name__ == 'WebDriver':
+            driver = getattr(test, "driver")
+            try:
+                test.images.append(driver.get_screenshot_as_base64())
+            except BaseException as e:
+                print(e)

@@ -20,6 +20,26 @@ import copy
 
 Load = unittest.defaultTestLoader
 
+IMG_TMPL = """
+<div id="case-image" class="modal show" style="display:none; background-color: #000000c7;">
+  <div class="modal-dialog modal-dialog-centered log_window">
+    <div class="modal-content shadow-3">
+      <div class="modal-header">
+        <div>
+          <h5 class="mb-1">screenshots</h5>
+        </div>
+          <div>
+            <button class="btn btn-sm btn-square bg-tertiary bg-opacity-20 bg-opacity-100-hover text-tertiary text-white-hover" onclick='hideImg(this)'">X</button>
+          </div>
+        </div>
+        <div class="modal-body" style="height: 600px; background: #e7eaf0;">
+          {images}
+        </div>
+        <div class="img-circle"></div>
+    </div>
+    </div>
+</div>
+"""
 
 class TestRunner():
 
@@ -93,6 +113,16 @@ class TestRunner():
             test_result['pass_rate'] = '{:.2f}'.format(test_result['success'] / test_result['all'] * 100)
         else:
             test_result['pass_rate'] = 0
+        for res in test_result['results']:
+            if getattr(res, 'images', []):
+                tmp = ""
+                for i, img in enumerate(res.images):
+                    if i == 0:
+                        tmp += """<img src="data:image/jpg;base64,{}" style="display: block;" class="img"/>\n""".format(img)
+                    else:
+                        tmp += """<img src="data:image/jpg;base64,{}" style="display: none;" class="img"/>\n""".format(img)
+                screenshots_html = IMG_TMPL.format(images=tmp)
+                setattr(res, "screenshots_html", screenshots_html)
         # 判断是否要生产测试报告
         if os.path.isdir(self.report_dir):
             pass
