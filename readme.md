@@ -1,5 +1,9 @@
 # unittestreport介绍
 
+## 说明
+本项目是在unittestreport的基础上增加了截图功能。在生成的最终的报告中可以看到截图，并支持多图切换。原项目地址：https://github.com/musen123/UnitTestReport
+![sceen shot button](docs/img/screen-shot-1.png)
+![view sceen shot](docs/img/screen-shot-2.png)
 
 ##  1、什么是unittestreport
 unittestreport是基于unittest开发的的一个功能扩展库，关于unittestreport最初在开发的时候，最初只是计划开发一个unittest生成html测试报告的模块，所以起名叫做unittestreport。在开发的过程中结合使用者的反馈，慢慢的扩展了更多的功能进去。后续还会持续的扩展和开发一些新的功能，目前实现了以下功能：
