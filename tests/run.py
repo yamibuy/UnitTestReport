@@ -1,5 +1,5 @@
 import unittest
-from unittestreport import TestRunner
+from unittestreport_yami import TestRunner
 
 suite = unittest.defaultTestLoader.discover(
     r"C:\git_project\UnitTestReport\tests\testcases"
