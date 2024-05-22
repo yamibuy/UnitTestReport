@@ -4,3 +4,4 @@ unittestreport_yamibuy.egg-info/*
 build/
 .idea
 *.pyc
+.vscode/

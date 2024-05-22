@@ -41,16 +41,19 @@ IMG_TMPL = """
 </div>
 """
 
-class TestRunner():
 
-    def __init__(self, suite: unittest.TestSuite,
-                 filename="report.html",
-                 report_dir="./reports",
-                 title='测试报告',
-                 tester='测试员',
-                 desc="XX项目测试生成的报告",
-                 templates=1
-                 ):
+class TestRunner:
+
+    def __init__(
+        self,
+        suite: unittest.TestSuite,
+        filename="report.html",
+        report_dir="./reports",
+        title="测试报告",
+        tester="测试员",
+        desc="XX项目测试生成的报告",
+        templates=1,
+    ):
         """
         :param suites: test suite
         :param filename: Report file name
@@ -104,23 +107,31 @@ class TestRunner():
             for item in test_result:
                 test_result[item] += res.fields[item]
 
-        test_result['runtime'] = '{:.2f} S'.format(time.time() - self.starttime)
-        test_result["begin_time"] = time.strftime("%Y-%m-%d %H:%M:%S", time.localtime(self.starttime))
+        test_result["runtime"] = "{:.2f} S".format(time.time() - self.starttime)
+        test_result["begin_time"] = time.strftime(
+            "%Y-%m-%d %H:%M:%S", time.localtime(self.starttime)
+        )
         test_result["title"] = self.title
         test_result["tester"] = self.tester
-        test_result['desc'] = self.desc
-        if test_result['all'] != 0:
-            test_result['pass_rate'] = '{:.2f}'.format(test_result['success'] / test_result['all'] * 100)
+        test_result["desc"] = self.desc
+        if test_result["all"] != 0:
+            test_result["pass_rate"] = "{:.2f}".format(
+                test_result["success"] / test_result["all"] * 100
+            )
         else:
-            test_result['pass_rate'] = 0
-        for res in test_result['results']:
-            if getattr(res, 'images', []):
+            test_result["pass_rate"] = 0
+        for res in test_result["results"]:
+            if getattr(res, "images", []):
                 tmp = ""
                 for i, img in enumerate(res.images):
                     if i == 0:
-                        tmp += """<img src="data:image/jpg;base64,{}" style="display: block;" class="img"/>\n""".format(img)
+                        tmp += """<img src="data:image/jpg;base64,{}" style="display: block;" class="img"/>\n""".format(
+                            img
+                        )
                     else:
-                        tmp += """<img src="data:image/jpg;base64,{}" style="display: none;" class="img"/>\n""".format(img)
+                        tmp += """<img src="data:image/jpg;base64,{}" style="display: none;" class="img"/>\n""".format(
+                            img
+                        )
                 screenshots_html = IMG_TMPL.format(images=tmp)
                 setattr(res, "screenshots_html", screenshots_html)
         # 判断是否要生产测试报告
@@ -129,24 +140,25 @@ class TestRunner():
         else:
             os.mkdir(self.report_dir)
         # 获取历史执行数据
-        test_result['history'] = self.__handle_history_data(test_result)
+        test_result["history"] = self.__handle_history_data(test_result)
 
-        template_path = os.path.join(os.path.dirname(__file__), '../templates')
+        template_path = os.path.join(os.path.dirname(__file__), "../templates")
         env = Environment(loader=FileSystemLoader(template_path))
         if self.templates == 2:
-            template = env.get_template('templates2.html')
+            template = env.get_template("templates2.html")
         elif self.templates == 3:
-            template = env.get_template('templates3.html')
+            template = env.get_template("templates3.html")
         else:
-            template = env.get_template('templates.html')
+            template = env.get_template("templates.html")
         file_path = os.path.join(self.report_dir, self.filename)
         res = template.render(test_result)
-        with open(file_path, 'wb') as f:
-            f.write(res.encode('utf8'))
+        with open(file_path, "wb") as f:
+            f.write(res.encode("utf8"))
         print("测试报告已经生成，报告路径为:{}".format(file_path))
-        self.email_conent = {"file": os.path.abspath(file_path),
-                             "content": env.get_template('templates03.html').render(test_result)
-                             }
+        self.email_conent = {
+            "file": os.path.abspath(file_path),
+            "content": env.get_template("templates03.html").render(test_result),
+        }
         self.test_result = test_result
         return test_result
 
@@ -156,29 +168,36 @@ class TestRunner():
         :return:
         """
         try:
-            with open(os.path.join(self.report_dir, 'history.json'), 'r', encoding='utf-8') as f:
+            with open(
+                os.path.join(self.report_dir, "history.json"), "r", encoding="utf-8"
+            ) as f:
                 history = json.load(f)
         except FileNotFoundError as e:
             history = []
-        history.append({'success': test_result['success'],
-                        'all': test_result['all'],
-                        'fail': test_result['fail'],
-                        'skip': test_result['skip'],
-                        'error': test_result['error'],
-                        'runtime': test_result['runtime'],
-                        'begin_time': test_result['begin_time'],
-                        'pass_rate': test_result['pass_rate'],
-                        })
+        history.append(
+            {
+                "success": test_result["success"],
+                "all": test_result["all"],
+                "fail": test_result["fail"],
+                "skip": test_result["skip"],
+                "error": test_result["error"],
+                "runtime": test_result["runtime"],
+                "begin_time": test_result["begin_time"],
+                "pass_rate": test_result["pass_rate"],
+            }
+        )
 
-        with open(os.path.join(self.report_dir, 'history.json'), 'w', encoding='utf-8') as f:
+        with open(
+            os.path.join(self.report_dir, "history.json"), "w", encoding="utf-8"
+        ) as f:
             json.dump(history, f, ensure_ascii=True)
         return history
 
     def __get_notice_content(self):
         """获取通知的内容"""
-        template_path = os.path.join(os.path.dirname(__file__), '../templates')
+        template_path = os.path.join(os.path.dirname(__file__), "../templates")
         env = Environment(loader=FileSystemLoader(template_path))
-        res_text = env.get_template('dingtalk.md').render(self.test_result)
+        res_text = env.get_template("dingtalk.md").render(self.test_result)
         return res_text
 
     def run(self, thread_count=1, count=0, interval=2):
@@ -192,7 +211,7 @@ class TestRunner():
         """
         suites = self.__classification_suite()
 
-        if thread_count>1:
+        if thread_count > 1:
             with ThreadPoolExecutor(max_workers=thread_count) as ts:
                 for i in suites:
                     res = ReRunResult(count=count, interval=interval)
@@ -222,7 +241,9 @@ class TestRunner():
         res = self.__get_reports()
         return res
 
-    def send_email(self, host: str, port: int, user: str, password: str, to_addrs, is_file=True):
+    def send_email(
+        self, host: str, port: int, user: str, password: str, to_addrs, is_file=True
+    ):
         """
         The occurrence report is attached to the mailbox
         :param host: SMTP server address
@@ -239,7 +260,9 @@ class TestRunner():
             filename = None
         content = self.email_conent["content"]
 
-        sm.send_email(subject=self.title, content=content, filename=filename, to_addrs=to_addrs)
+        sm.send_email(
+            subject=self.title, content=content, filename=filename, to_addrs=to_addrs
+        )
 
     def get_except_info(self):
         """Get error reporting information for error cases and failure cases"""
@@ -249,17 +272,33 @@ class TestRunner():
             for texts in i.failures:
                 t, content = texts
                 num += 1
-                except_info.append("*{}、用例【{}】执行失败*，\n失败信息如下：".format(num, t._testMethodDoc))
+                except_info.append(
+                    "*{}、用例【{}】执行失败*，\n失败信息如下：".format(
+                        num, t._testMethodDoc
+                    )
+                )
                 except_info.append(content)
             for texts in i.errors:
                 num += 1
                 t, content = texts
-                except_info.append("*{}、用例【{}】执行错误*，\n错误信息如下：".format(num, t._testMethodDoc))
+                except_info.append(
+                    "*{}、用例【{}】执行错误*，\n错误信息如下：".format(
+                        num, t._testMethodDoc
+                    )
+                )
                 except_info.append(content)
         except_str = "\n".join(except_info)
         return except_str
 
-    def dingtalk_notice(self, url, key=None, secret=None, atMobiles=None, isatall=False, except_info=False):
+    def dingtalk_notice(
+        self,
+        url,
+        key=None,
+        secret=None,
+        atMobiles=None,
+        isatall=False,
+        except_info=False,
+    ):
         """
         :param url: 钉钉机器人的Webhook地址
         :param key: （非必传：str类型）如果钉钉机器人安全设置了关键字，则需要传入对应的关键字
@@ -272,18 +311,12 @@ class TestRunner():
 
         res_text = self.__get_notice_content()
         if except_info:
-            res_text += '\n ### 未通过用例详情：\n'
+            res_text += "\n ### 未通过用例详情：\n"
             res_text += self.get_except_info()
         data = {
             "msgtype": "markdown",
-            "markdown": {
-                "title": '{}({})'.format(self.title, key),
-                "text": res_text
-            },
-            "at": {
-                "atMobiles": atMobiles,
-                "isAtAll": isatall
-            }
+            "markdown": {"title": "{}({})".format(self.title, key), "text": res_text},
+            "at": {"atMobiles": atMobiles, "isAtAll": isatall},
         }
         ding = DingTalk(url=url, data=data, secret=secret)
         response = ding.send_info()
@@ -304,9 +337,7 @@ class TestRunner():
         data = {
             "chatid": chatid,
             "msgtype": "markdown",
-            "markdown": {
-                "content": res_text
-            }
+            "markdown": {"content": res_text},
         }
         wx = WeiXin(access_token=access_token, corpid=corpid, corpsecret=corpsecret)
         response = wx.send_info(data=data)

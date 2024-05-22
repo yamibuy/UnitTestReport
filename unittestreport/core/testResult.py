@@ -6,6 +6,7 @@ E-mail:3247119728@qq.com
 Company:湖南零檬信息技术有限公司
 ============================
 """
+
 import re
 import traceback
 import unittest
@@ -20,12 +21,12 @@ def output2console(s):
     """Output stdout content to console"""
     tmp_stdout = sys.stdout
     sys.stdout = origin_stdout
-    print(s, end='')
+    print(s, end="")
     sys.stdout = tmp_stdout
 
 
 class OutputRedirector(object):
-    """ Wrapper to redirect stdout or stderr """
+    """Wrapper to redirect stdout or stderr"""
 
     def __init__(self, fp):
         self.fp = fp
@@ -57,7 +58,7 @@ class TestResult(unittest.TestResult):
             "error": 0,
             "begin_time": "",
             "results": [],
-            "testClass": set()
+            "testClass": set(),
         }
         self.sys_stdout = None
         self.sys_stderr = None
@@ -83,66 +84,83 @@ class TestResult(unittest.TestResult):
         return self.outputBuffer.getvalue()
 
     def stopTest(self, test):
-        test.run_time = '{:.3}s'.format((time.time() - self.start_time))
+        test.run_time = "{:.3}s".format((time.time() - self.start_time))
         test.class_name = test.__class__.__qualname__
-        test.method_name = test.__dict__['_testMethodName']
+        test.method_name = test.__dict__["_testMethodName"]
         test.method_doc = test.shortDescription()
-        self.fields['results'].append(test)
+        self.fields["results"].append(test)
         self.fields["testClass"].add(test.class_name)
         self.complete_output()
 
     def stopTestRun(self, title=None):
-        self.fields['fail'] = len(self.failures)
-        self.fields['error'] = len(self.errors)
-        self.fields['skip'] = len(self.skipped)
-        self.fields['all'] = sum(
-            [self.fields['fail'], self.fields['error'], self.fields['skip'], self.fields['success']])
-        self.fields['testClass'] = list(self.fields['testClass'])
+        self.fields["fail"] = len(self.failures)
+        self.fields["error"] = len(self.errors)
+        self.fields["skip"] = len(self.skipped)
+        self.fields["all"] = sum(
+            [
+                self.fields["fail"],
+                self.fields["error"],
+                self.fields["skip"],
+                self.fields["success"],
+            ]
+        )
+        self.fields["testClass"] = list(self.fields["testClass"])
 
     def addSuccess(self, test):
         self.fields["success"] += 1
-        test.state = '成功'
+        test.state = "成功"
         sys.stdout.write("{}执行——>【通过】\n".format(test))
         logs = []
         output = self.complete_output()
         logs.append(output)
         test.run_info = logs
+        self._add_screen_shot_in_test(test)
 
     def addFailure(self, test, err):
         super().addFailure(test, err)
         logs = []
-        test.state = '失败'
+        test.state = "失败"
         sys.stderr.write("{}执行——>【失败】\n".format(test))
         output = self.complete_output()
         logs.append(output)
         logs.extend(traceback.format_exception(*err))
         test.run_info = logs
+        self._add_screen_shot_in_test(test)
 
     def addSkip(self, test, reason):
         super().addSkip(test, reason)
-        test.state = '跳过'
+        test.state = "跳过"
         sys.stdout.write("{}执行--【跳过Skip】\n".format(test))
         logs = [reason]
         test.run_info = logs
 
     def addError(self, test, err):
         super().addError(test, err)
-        test.state = '错误'
+        test.state = "错误"
         sys.stderr.write("{}执行——>【错误Error】\n".format(test))
         logs = []
         logs.extend(traceback.format_exception(*err))
         test.run_info = logs
-        if test.__class__.__qualname__ == '_ErrorHolder':
+        if test.__class__.__qualname__ == "_ErrorHolder":
             test.run_time = 0
-            res = re.search(r'(.*)\(.*\.(.*)\)', test.description)
+            res = re.search(r"(.*)\(.*\.(.*)\)", test.description)
             test.class_name = res.group(2)
             test.method_name = res.group(1)
             test.method_doc = test.shortDescription()
-            self.fields['results'].append(test)
+            self.fields["results"].append(test)
             self.fields["testClass"].add(test.class_name)
         else:
             output = self.complete_output()
             logs.append(output)
+        self._add_screen_shot_in_test(test)
+
+    def _add_screen_shot_in_test(self, test):
+        if type(getattr(test, "driver", "")).__name__ == "WebDriver":
+            driver = getattr(test, "driver")
+            try:
+                test.images.append(driver.get_screenshot_as_base64())
+            except BaseException as e:
+                print(e)
 
 
 class ReRunResult(TestResult):
@@ -164,44 +182,44 @@ class ReRunResult(TestResult):
             super().stopTest(test)
 
     def addFailure(self, test, err):
-        if not hasattr(test, 'count'):
+        if not hasattr(test, "count"):
             test.count = 0
         if test.count < self.count:
             test.count += 1
             sys.stderr.write("{}执行——>【失败Failure】\n".format(test))
             for string in traceback.format_exception(*err):
                 sys.stderr.write(string)
-            sys.stderr.write("================{}重运行第{}次================\n".format(test, test.count))
+            sys.stderr.write(
+                f"================{test}重运行第{test.count}次================\n"
+            )
 
             time.sleep(self.interval)
             test.run(self)
         else:
             super().addFailure(test, err)
             if test.count != 0:
-                sys.stderr.write("================重运行{}次完毕================\n".format(test.count))
+                sys.stderr.write(
+                    f"================重运行{test.count}次完毕================\n"
+                )
         self._add_screen_shot_in_test(test)
 
     def addError(self, test, err):
-        if not hasattr(test, 'count'):
+        if not hasattr(test, "count"):
             test.count = 0
         if test.count < self.count:
             test.count += 1
             sys.stderr.write("{}执行——>【错误Error】\n".format(test))
             for string in traceback.format_exception(*err):
                 sys.stderr.write(string)
-            sys.stderr.write("================{}重运行第{}次================\n".format(test, test.count))
+            sys.stderr.write(
+                f"================{test}重运行第{test.count}次================\n"
+            )
             time.sleep(self.interval)
             test.run(self)
         else:
             super().addError(test, err)
             if test.count != 0:
-                sys.stderr.write("================重运行{}次完毕================\n".format(test.count))
+                sys.stderr.write(
+                    f"================重运行{test.count}次完毕================\n"
+                )
         self._add_screen_shot_in_test(test)
-
-    def _add_screen_shot_in_test(self, test):
-        if type(getattr(test, "driver", "")).__name__ == 'WebDriver':
-            driver = getattr(test, "driver")
-            try:
-                test.images.append(driver.get_screenshot_as_base64())
-            except BaseException as e:
-                print(e)
