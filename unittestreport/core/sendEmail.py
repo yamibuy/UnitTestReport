@@ -1,11 +1,3 @@
-"""
-============================
-Author:柠檬班-木森
-Time:2020/8/31   14:48
-E-mail:3247119728@qq.com
-Company:湖南零檬信息技术有限公司
-============================
-"""
 import os
 import smtplib
 import time
@@ -34,7 +26,9 @@ class SendEmail:
         self.smtp.login(user=user, password=password)
         self.user = user
 
-    def send_email(self, subject="测试报告", content=None, filename=None, to_addrs=None):
+    def send_email(
+        self, subject="测试报告", content=None, filename=None, to_addrs=None
+    ):
         """
         发送邮件
         :param subject: 邮件主题
@@ -63,7 +57,7 @@ class SendEmail:
                 content = f.read()
             report = MIMEApplication(content, _subtype=None)
             name = os.path.split(filename)[1]
-            report.add_header('content-disposition', 'attachment', filename=name)
+            report.add_header("content-disposition", "attachment", filename=name)
             msg.attach(report)
         # 第三步：发送邮件
         try:

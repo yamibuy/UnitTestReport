@@ -1,11 +1,3 @@
-"""
-============================
-Author:柠檬班-木森
-Time:2020/11/25  14:14
-E-mail:3247119728@qq.com
-Company:湖南零檬信息技术有限公司
-============================
-"""
 import hmac
 import hashlib
 import base64
@@ -38,7 +30,9 @@ class SendEmail:
         self.smtp.login(user=user, password=password)
         self.user = user
 
-    def send_email(self, subject="test report", content=None, filename=None, to_addrs=None):
+    def send_email(
+        self, subject="test report", content=None, filename=None, to_addrs=None
+    ):
         """
         :param subject:Email subject
         :param content: Email content
@@ -66,7 +60,7 @@ class SendEmail:
             except:
                 report = MIMEApplication(content)
             name = os.path.split(filename)[1]
-            report.add_header('content-disposition', 'attachment', filename=name)
+            report.add_header("content-disposition", "attachment", filename=name)
             msg.attach(report)
         try:
             self.smtp.send_message(msg, from_addr=self.user, to_addrs=to_addrs)
@@ -93,10 +87,12 @@ class DingTalk:
     def get_stamp(self):
         """Countersign"""
         timestamp = str(round(time.time() * 1000))
-        secret_enc = self.secret.encode('utf-8')
-        string_to_sign = '{}\n{}'.format(timestamp, self.secret)
-        string_to_sign_enc = string_to_sign.encode('utf-8')
-        hmac_code = hmac.new(secret_enc, string_to_sign_enc, digestmod=hashlib.sha256).digest()
+        secret_enc = self.secret.encode("utf-8")
+        string_to_sign = "{}\n{}".format(timestamp, self.secret)
+        string_to_sign_enc = string_to_sign.encode("utf-8")
+        hmac_code = hmac.new(
+            secret_enc, string_to_sign_enc, digestmod=hashlib.sha256
+        ).digest()
         sign = urllib.parse.quote_plus(base64.b64encode(hmac_code))
         return {"sign": sign, "timestamp": timestamp}
 
@@ -114,6 +110,7 @@ class WeiXin:
     """
     Enterprise wechat group notice
     """
+
     base_url = "https://qyapi.weixin.qq.com/cgi-bin/appchat/send?access_token="
 
     def __init__(self, access_token=None, corpid=None, corpsecret=None):
@@ -128,17 +125,16 @@ class WeiXin:
         elif corpid and corpsecret:
             self.access_token = self.get_access_token()
         else:
-            raise ValueError("access_token and [corpid, corpsecret] cannot both be empty. At least one of them must be passed in")
+            raise ValueError(
+                "access_token and [corpid, corpsecret] cannot both be empty. At least one of them must be passed in"
+            )
 
     def get_access_token(self):
         """get access_token"""
         url = "https://qyapi.weixin.qq.com/cgi-bin/gettoken"
-        params = {
-            "corpid": self.corpid,
-            "corpsecret": self.corpsecret
-        }
+        params = {"corpid": self.corpid, "corpsecret": self.corpsecret}
         result = requests.get(url=url, params=params).json()
-        if result['errcode'] != 0:
+        if result["errcode"] != 0:
             raise ValueError(result["errmsg"])
         return result["access_token"]
 
@@ -147,6 +143,3 @@ class WeiXin:
         url = self.base_url + self.access_token
         response = requests.post(url=url, json=data)
         return response
-
-
-
