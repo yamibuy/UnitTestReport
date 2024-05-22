@@ -44,7 +44,7 @@ class TestRunner:
         report_dir="./reports",
         title="测试报告",
         tester="测试员",
-        desc="XX项目测试生成的报告",
+        desc="测试报告",
         templates=1,
     ):
         """
@@ -100,7 +100,7 @@ class TestRunner:
             for item in test_result:
                 test_result[item] += res.fields[item]
 
-        test_result["runtime"] = "{:.2f} S".format(time.time() - self.starttime)
+        test_result["runtime"] = "{:.2f}s".format(time.time() - self.starttime)
         test_result["begin_time"] = time.strftime(
             "%Y-%m-%d %H:%M:%S", time.localtime(self.starttime)
         )

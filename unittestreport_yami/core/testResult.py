@@ -75,7 +75,7 @@ class TestResult(unittest.TestResult):
         return self.outputBuffer.getvalue()
 
     def stopTest(self, test):
-        test.run_time = "{:.3}s".format((time.time() - self.start_time))
+        test.run_time = "{:.2f}s".format(time.time() - self.starttime)
         test.class_name = test.__class__.__qualname__
         test.method_name = test.__dict__["_testMethodName"]
         test.method_doc = test.shortDescription()
