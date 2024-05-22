@@ -192,7 +192,6 @@ class ReRunResult(TestResult):
                 sys.stderr.write(
                     f"================重运行{test.count}次完毕================\n"
                 )
-        self._add_screen_shot_in_test(test)
 
     def addError(self, test, err):
         if not hasattr(test, "count"):
@@ -213,4 +212,3 @@ class ReRunResult(TestResult):
                 sys.stderr.write(
                     f"================重运行{test.count}次完毕================\n"
                 )
-        self._add_screen_shot_in_test(test)

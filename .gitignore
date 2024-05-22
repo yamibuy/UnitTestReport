@@ -6,3 +6,4 @@ build/
 *.pyc
 .vscode/
 .github/
+unittestreport_yami.egg-info/
