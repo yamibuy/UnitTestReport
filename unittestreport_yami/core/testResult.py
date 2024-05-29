@@ -37,6 +37,16 @@ stdout_redirector = OutputRedirector(sys.stdout)
 stderr_redirector = OutputRedirector(sys.stderr)
 
 
+def add_screenshot(test):
+    if type(getattr(test, "driver", "")).__name__ == "WebDriver":
+        try:
+            driver = getattr(test, "driver")
+            test.images.append(driver.get_screenshot_as_base64())
+        except Exception as e:
+            print(e)
+            driver.quit()
+
+
 class TestResult(unittest.TestResult):
     def __init__(self):
         super().__init__()
@@ -98,6 +108,7 @@ class TestResult(unittest.TestResult):
         self.fields["testClass"] = list(self.fields["testClass"])
 
     def addSuccess(self, test):
+        self._add_screen_shot_in_test(test)
         self.fields["success"] += 1
         test.state = "成功"
         sys.stdout.write("{}执行——>【通过】\n".format(test))
@@ -105,9 +116,9 @@ class TestResult(unittest.TestResult):
         output = self.complete_output()
         logs.append(output)
         test.run_info = logs
-        self._add_screen_shot_in_test(test)
 
     def addFailure(self, test, err):
+        self._add_screen_shot_in_test(test)
         super().addFailure(test, err)
         logs = []
         test.state = "失败"
@@ -116,7 +127,6 @@ class TestResult(unittest.TestResult):
         logs.append(output)
         logs.extend(traceback.format_exception(*err))
         test.run_info = logs
-        self._add_screen_shot_in_test(test)
 
     def addSkip(self, test, reason):
         super().addSkip(test, reason)
@@ -126,6 +136,7 @@ class TestResult(unittest.TestResult):
         test.run_info = logs
 
     def addError(self, test, err):
+        self._add_screen_shot_in_test(test)
         super().addError(test, err)
         test.state = "错误"
         sys.stderr.write("{}执行——>【错误Error】\n".format(test))
@@ -143,15 +154,15 @@ class TestResult(unittest.TestResult):
         else:
             output = self.complete_output()
             logs.append(output)
-        self._add_screen_shot_in_test(test)
 
     def _add_screen_shot_in_test(self, test):
+        add_screenshot(test)
+        self._close_driver(test)
+
+    def _close_driver(self, test):
         if type(getattr(test, "driver", "")).__name__ == "WebDriver":
             driver = getattr(test, "driver")
-            try:
-                test.images.append(driver.get_screenshot_as_base64())
-            except BaseException as e:
-                print(e)
+            driver.quit()
 
 
 class ReRunResult(TestResult):
