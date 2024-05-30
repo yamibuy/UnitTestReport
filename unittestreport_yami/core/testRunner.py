@@ -351,5 +351,5 @@ class TestRunner:
             "msgtype": "markdown",
             "markdown": {"content": res_text},
         }
-        response = WeiXin().send_to_robot(webhook, data)
+        response = WeiXin().send_to_bot(webhook, data)
         return response
