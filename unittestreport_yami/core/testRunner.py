@@ -46,6 +46,7 @@ class TestRunner:
         tester="测试员",
         desc="测试报告",
         templates=1,
+        report_url=None,
     ):
         """
         :param suites: test suite
@@ -70,6 +71,7 @@ class TestRunner:
         self.report_dir = report_dir
         self.result = []
         self.starttime = time.time()
+        self.report_url = report_url
 
     def __classification_suite(self):
         suites_list = []
@@ -190,7 +192,14 @@ class TestRunner:
         """获取通知的内容"""
         template_path = os.path.join(os.path.dirname(__file__), "../templates")
         env = Environment(loader=FileSystemLoader(template_path))
-        res_text = env.get_template("dingtalk.md").render(self.test_result)
+        if self.report_url:
+            template = env.get_template("remote_report.md")
+            report_address = f"{self.report_url}/{self.filename}"
+            report_address = report_address.replace("\\", "/")
+            self.test_result["report_address"] = report_address
+        else:
+            template = env.get_template("dingtalk.md")
+        res_text = template.render(self.test_result)
         return res_text
 
     def run(self, thread_count=1, count=0, interval=2):
@@ -334,4 +343,13 @@ class TestRunner:
         }
         wx = WeiXin(access_token=access_token, corpid=corpid, corpsecret=corpsecret)
         response = wx.send_info(data=data)
+        return response
+
+    def weixin_robot_notice(self, webhook):
+        res_text = self.__get_notice_content()
+        data = {
+            "msgtype": "markdown",
+            "markdown": {"content": res_text},
+        }
+        response = WeiXin().send_to_robot(webhook, data)
         return response

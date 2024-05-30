@@ -111,7 +111,7 @@ class WeiXin:
     Enterprise wechat group notice
     """
 
-    base_url = "https://qyapi.weixin.qq.com/cgi-bin/appchat/send?access_token="
+    base_url = "https://qyapi.weixin.qq.com/cgi-bin/message/send?debug=1&access_token="
 
     def __init__(self, access_token=None, corpid=None, corpsecret=None):
         """
@@ -125,9 +125,7 @@ class WeiXin:
         elif corpid and corpsecret:
             self.access_token = self.get_access_token()
         else:
-            raise ValueError(
-                "access_token and [corpid, corpsecret] cannot both be empty. At least one of them must be passed in"
-            )
+            self.access_token = None
 
     def get_access_token(self):
         """get access_token"""
@@ -140,6 +138,20 @@ class WeiXin:
 
     def send_info(self, data):
         """send info"""
+        if not self.access_token:
+            raise ValueError(
+                "access_token and [corpid, corpsecret] cannot both be empty. At least one of them must be passed in"
+            )
+
         url = self.base_url + self.access_token
         response = requests.post(url=url, json=data)
+        return response
+
+    def send_to_bot(self, webhook, data):
+        """
+        企业微信通过机器人发送消息通知
+        webhook: 群消息机器人webhook地址
+        data: 要发送的数据， 例如：{"msgtype": "text", "text": {"content": "hello world"}}， 详细信息请查看企业微信相关文档： https://developer.work.weixin.qq.com/document/path/99110
+        """
+        response = requests.post(url=webhook, json=data)
         return response
