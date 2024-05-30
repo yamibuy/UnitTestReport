@@ -157,9 +157,9 @@ class TestResult(unittest.TestResult):
 
     def _add_screen_shot_in_test(self, test):
         add_screenshot(test)
-        self._close_driver(test)
+        self.close_driver(test)
 
-    def _close_driver(self, test):
+    def close_driver(self, test):
         if type(getattr(test, "driver", "")).__name__ == "WebDriver":
             driver = getattr(test, "driver")
             driver.quit()
@@ -187,6 +187,7 @@ class ReRunResult(TestResult):
         if not hasattr(test, "count"):
             test.count = 0
         if test.count < self.count:
+            super().close_driver(test)
             test.count += 1
             sys.stderr.write("{}执行——>【失败Failure】\n".format(test))
             for string in traceback.format_exception(*err):
@@ -208,6 +209,7 @@ class ReRunResult(TestResult):
         if not hasattr(test, "count"):
             test.count = 0
         if test.count < self.count:
+            super().close_driver(test)
             test.count += 1
             sys.stderr.write("{}执行——>【错误Error】\n".format(test))
             for string in traceback.format_exception(*err):
