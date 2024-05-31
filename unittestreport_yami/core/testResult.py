@@ -4,6 +4,7 @@ import unittest
 import sys
 import time
 from io import StringIO
+from .screenshot import add_screenshot
 
 origin_stdout = sys.stdout
 
@@ -35,16 +36,6 @@ class OutputRedirector(object):
 
 stdout_redirector = OutputRedirector(sys.stdout)
 stderr_redirector = OutputRedirector(sys.stderr)
-
-
-def add_screenshot(test):
-    if type(getattr(test, "driver", "")).__name__ == "WebDriver":
-        try:
-            driver = getattr(test, "driver")
-            test.images.append(driver.get_screenshot_as_base64())
-        except Exception as e:
-            print(e)
-            driver.quit()
 
 
 class TestResult(unittest.TestResult):

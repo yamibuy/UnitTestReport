@@ -119,14 +119,24 @@ class TestRunner:
             if getattr(res, "images", []):
                 tmp = ""
                 for i, img in enumerate(res.images):
-                    if i == 0:
-                        tmp += """<img src="data:image/jpg;base64,{}" style="display: block;" class="img"/>\n""".format(
-                            img
-                        )
+                    if self.s3_image:
+                        if i == 0:
+                            tmp += """<img src="{}" style="display: block;" class="img"/>\n""".format(
+                                img
+                            )
+                        else:
+                            tmp += """<img src="{}" style="display: none;" class="img"/>\n""".format(
+                                img
+                            )
                     else:
-                        tmp += """<img src="data:image/jpg;base64,{}" style="display: none;" class="img"/>\n""".format(
-                            img
-                        )
+                        if i == 0:
+                            tmp += """<img src="data:image/jpg;base64,{}" style="display: block;" class="img"/>\n""".format(
+                                img
+                            )
+                        else:
+                            tmp += """<img src="data:image/jpg;base64,{}" style="display: none;" class="img"/>\n""".format(
+                                img
+                            )
                 screenshots_html = IMG_TMPL.format(images=tmp)
                 setattr(res, "screenshots_html", screenshots_html)
         # 判断是否要生产测试报告
