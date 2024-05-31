@@ -111,38 +111,54 @@ class TestResult(unittest.TestResult):
         self._add_screen_shot_in_test(test)
         self.fields["success"] += 1
         test.state = "成功"
-        sys.stdout.write("{}执行——>【通过】\n".format(test))
         logs = []
-        output = self.complete_output()
-        logs.append(output)
-        test.run_info = logs
+        msg = "{}执行——>【通过】\n".format(test)
+        logs.append(msg)
+        sys.stdout.write(msg)
+        # output = self.complete_output()
+        # logs.append(output)
+        if not test.run_info:
+            test.run_info = []
+        test.run_info.extend(logs)
 
     def addFailure(self, test, err):
         self._add_screen_shot_in_test(test)
         super().addFailure(test, err)
-        logs = []
         test.state = "失败"
-        sys.stderr.write("{}执行——>【失败】\n".format(test))
+        logs = []
+        msg = "{}执行——>【失败】\n".format(test)
+        logs.append(msg)
+        sys.stdout.write(msg)
         output = self.complete_output()
         logs.append(output)
         logs.extend(traceback.format_exception(*err))
-        test.run_info = logs
+        if not test.run_info:
+            test.run_info = []
+        test.run_info.extend(logs)
 
     def addSkip(self, test, reason):
         super().addSkip(test, reason)
         test.state = "跳过"
-        sys.stdout.write("{}执行--【跳过Skip】\n".format(test))
         logs = [reason]
-        test.run_info = logs
+        msg = "{}执行--【跳过Skip】\n".format(test)
+        logs.append(msg)
+        sys.stdout.write(msg)
+
+        if not test.run_info:
+            test.run_info = []
+        test.run_info.extend(logs)
 
     def addError(self, test, err):
         self._add_screen_shot_in_test(test)
         super().addError(test, err)
         test.state = "错误"
-        sys.stderr.write("{}执行——>【错误Error】\n".format(test))
+
+        msg = "{}执行——>【错误Error】\n".format(test)
+        sys.stderr.write(msg)
         logs = []
+        logs.append(msg)
         logs.extend(traceback.format_exception(*err))
-        test.run_info = logs
+
         if test.__class__.__qualname__ == "_ErrorHolder":
             test.run_time = 0
             res = re.search(r"(.*)\(.*\.(.*)\)", test.description)
@@ -151,9 +167,9 @@ class TestResult(unittest.TestResult):
             test.method_doc = test.shortDescription()
             self.fields["results"].append(test)
             self.fields["testClass"].add(test.class_name)
-        else:
-            output = self.complete_output()
-            logs.append(output)
+        if not test.run_info:
+            test.run_info = []
+        test.run_info.extend(logs)
 
     def _add_screen_shot_in_test(self, test):
         add_screenshot(test)
