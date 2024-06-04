@@ -99,7 +99,7 @@ class TestResult(unittest.TestResult):
         self.fields["testClass"] = list(self.fields["testClass"])
 
     def addSuccess(self, test):
-        self._add_screen_shot_in_test(test)
+        self._add_screenshot(test)
         self.fields["success"] += 1
         test.state = "成功"
         logs = []
@@ -113,7 +113,7 @@ class TestResult(unittest.TestResult):
         test.run_info.extend(logs)
 
     def addFailure(self, test, err):
-        self._add_screen_shot_in_test(test)
+        self._add_screenshot(test)
         super().addFailure(test, err)
         test.state = "失败"
         logs = []
@@ -140,7 +140,7 @@ class TestResult(unittest.TestResult):
         test.run_info.extend(logs)
 
     def addError(self, test, err):
-        self._add_screen_shot_in_test(test)
+        self._add_screenshot(test)
         super().addError(test, err)
         test.state = "错误"
 
@@ -194,7 +194,7 @@ class ReRunResult(TestResult):
         if not hasattr(test, "count"):
             test.count = 0
         if test.count < self.count:
-            super().close_driver(test)
+            self.close_driver(test)
             test.count += 1
             sys.stderr.write("{}执行——>【失败Failure】\n".format(test))
             for string in traceback.format_exception(*err):
@@ -216,7 +216,7 @@ class ReRunResult(TestResult):
         if not hasattr(test, "count"):
             test.count = 0
         if test.count < self.count:
-            super().close_driver(test)
+            self.close_driver(test)
             test.count += 1
             sys.stderr.write("{}执行——>【错误Error】\n".format(test))
             for string in traceback.format_exception(*err):
