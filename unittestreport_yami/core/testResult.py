@@ -1,41 +1,8 @@
 import re
 import traceback
 import unittest
-import sys
 import time
-from io import StringIO
 from .screenshot import add_screenshot
-
-origin_stdout = sys.stdout
-
-
-def output2console(s):
-    """Output stdout content to console"""
-    tmp_stdout = sys.stdout
-    sys.stdout = origin_stdout
-    print(s, end="")
-    sys.stdout = tmp_stdout
-
-
-class OutputRedirector(object):
-    """Wrapper to redirect stdout or stderr"""
-
-    def __init__(self, fp):
-        self.fp = fp
-
-    def write(self, s):
-        self.fp.write(s)
-        origin_stdout.write(str(s))
-
-    def writelines(self, lines):
-        self.fp.writelines(lines)
-
-    def flush(self):
-        self.fp.flush()
-
-
-stdout_redirector = OutputRedirector(sys.stdout)
-stderr_redirector = OutputRedirector(sys.stderr)
 
 
 class TestResult(unittest.TestResult):
@@ -52,28 +19,10 @@ class TestResult(unittest.TestResult):
             "results": [],
             "testClass": set(),
         }
-        self.sys_stdout = None
-        self.sys_stderr = None
-        self.outputBuffer = None
 
     def startTest(self, test):
         super().startTest(test)
         self.start_time = time.time()
-        self.outputBuffer = StringIO()
-        stdout_redirector.fp = self.outputBuffer
-        stderr_redirector.fp = self.outputBuffer
-        self.sys_stdout = sys.stdout
-        self.sys_stderr = sys.stderr
-        sys.stdout = stdout_redirector
-        sys.stderr = stderr_redirector
-
-    def complete_output(self):
-        if self.sys_stdout:
-            sys.stdout = self.sys_stdout
-            sys.stderr = self.sys_stderr
-            self.sys_stdout = None
-            self.sys_stderr = None
-        return self.outputBuffer.getvalue()
 
     def stopTest(self, test):
         test.run_time = "{:.2f}s".format(time.time() - self.start_time)
@@ -82,7 +31,6 @@ class TestResult(unittest.TestResult):
         test.method_doc = test.shortDescription()
         self.fields["results"].append(test)
         self.fields["testClass"].add(test.class_name)
-        self.complete_output()
 
     def stopTestRun(self, title=None):
         self.fields["fail"] = len(self.failures)
@@ -99,56 +47,35 @@ class TestResult(unittest.TestResult):
         self.fields["testClass"] = list(self.fields["testClass"])
 
     def addSuccess(self, test):
-        self._add_screenshot(test)
+        self._add_screen_shot_in_test(test)
         self.fields["success"] += 1
         test.state = "成功"
-        logs = []
         msg = "{}执行——>【通过】\n".format(test)
-        logs.append(msg)
-        sys.stdout.write(msg)
-        # output = self.complete_output()
-        # logs.append(output)
-        if not test.run_info:
-            test.run_info = []
-        test.run_info.extend(logs)
+        self._log_run_info_to_test(test, msg)
 
     def addFailure(self, test, err):
-        self._add_screenshot(test)
+        self._add_screen_shot_in_test(test)
         super().addFailure(test, err)
         test.state = "失败"
-        logs = []
         msg = "{}执行——>【失败】\n".format(test)
-        logs.append(msg)
-        sys.stdout.write(msg)
-        output = self.complete_output()
-        logs.append(output)
-        logs.extend(traceback.format_exception(*err))
-        if not test.run_info:
-            test.run_info = []
-        test.run_info.extend(logs)
+        self._log_run_info_to_test(test, msg)
+        self._log_run_info_to_test(test, traceback.format_exception(*err))
 
     def addSkip(self, test, reason):
         super().addSkip(test, reason)
         test.state = "跳过"
-        logs = [reason]
         msg = "{}执行--【跳过Skip】\n".format(test)
-        logs.append(msg)
-        sys.stdout.write(msg)
-
-        if not test.run_info:
-            test.run_info = []
-        test.run_info.extend(logs)
+        self._log_run_info_to_test(test, reason)
+        self._log_run_info_to_test(test, msg)
 
     def addError(self, test, err):
-        self._add_screenshot(test)
+        self._add_screen_shot_in_test(test)
         super().addError(test, err)
         test.state = "错误"
 
         msg = "{}执行——>【错误Error】\n".format(test)
-        sys.stderr.write(msg)
-        logs = []
-        logs.append(msg)
-        logs.extend(traceback.format_exception(*err))
+        self._log_run_info_to_test(test, msg)
+        self._log_run_info_to_test(test, traceback.format_exception(*err))
 
         if test.__class__.__qualname__ == "_ErrorHolder":
             test.run_time = 0
@@ -158,9 +85,6 @@ class TestResult(unittest.TestResult):
             test.method_doc = test.shortDescription()
             self.fields["results"].append(test)
             self.fields["testClass"].add(test.class_name)
-        if not test.run_info:
-            test.run_info = []
-        test.run_info.extend(logs)
 
     def _add_screen_shot_in_test(self, test):
         add_screenshot(test)
@@ -170,6 +94,15 @@ class TestResult(unittest.TestResult):
         if type(getattr(test, "driver", "")).__name__ == "WebDriver":
             driver = getattr(test, "driver")
             driver.quit()
+
+    def _log_run_info_to_test(self, test, msg):
+        if not hasattr(test, "run_info"):
+            test.run_info = []
+        if isinstance(msg, list):
+            test.run_info.extend(msg)
+        else:
+            test.run_info.append(msg)
+        print(msg)
 
 
 class ReRunResult(TestResult):
@@ -196,21 +129,24 @@ class ReRunResult(TestResult):
         if test.count < self.count:
             self.close_driver(test)
             test.count += 1
-            sys.stderr.write("{}执行——>【失败Failure】\n".format(test))
-            for string in traceback.format_exception(*err):
-                sys.stderr.write(string)
-            sys.stderr.write(
+            msg = f"{test}执行——>【失败Failure】\n"
+            self._log_run_info_to_test(test, msg)
+            self._log_run_info_to_test(test, traceback.format_exception(*err))
+
+            retry_str = (
                 f"================{test}重运行第{test.count}次================\n"
             )
+            self._log_run_info_to_test(test, retry_str)
 
             time.sleep(self.interval)
             test.run(self)
         else:
             super().addFailure(test, err)
             if test.count != 0:
-                sys.stderr.write(
+                retried_str = (
                     f"================重运行{test.count}次完毕================\n"
                 )
+                self._log_run_info_to_test(test, retried_str)
 
     def addError(self, test, err):
         if not hasattr(test, "count"):
@@ -218,17 +154,19 @@ class ReRunResult(TestResult):
         if test.count < self.count:
             self.close_driver(test)
             test.count += 1
-            sys.stderr.write("{}执行——>【错误Error】\n".format(test))
-            for string in traceback.format_exception(*err):
-                sys.stderr.write(string)
-            sys.stderr.write(
+            msg = f"{test}执行——>【错误Error】\n"
+            self._log_run_info_to_test(test, msg)
+            self._log_run_info_to_test(test, traceback.format_exception(*err))
+            retry_str = (
                 f"================{test}重运行第{test.count}次================\n"
             )
+            self._log_run_info_to_test(test, retry_str)
             time.sleep(self.interval)
             test.run(self)
         else:
             super().addError(test, err)
             if test.count != 0:
-                sys.stderr.write(
+                retried_str = (
                     f"================重运行{test.count}次完毕================\n"
                 )
+                self._log_run_info_to_test(test, retried_str)

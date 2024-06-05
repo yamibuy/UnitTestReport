@@ -119,7 +119,7 @@ class TestRunner:
             if getattr(res, "images", []):
                 tmp = ""
                 for i, img in enumerate(res.images):
-                    if img.startswith("http"):
+                    if hasattr(res, "s3_url"):
                         if i == 0:
                             tmp += """<img src="{}" style="display: block;" class="img"/>\n""".format(
                                 img

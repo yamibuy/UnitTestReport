@@ -42,6 +42,6 @@ def upload_to_s3(s3_url, file_path):
 
 
 def add_screenshot(test):
-    if test.s3_url:
+    if hasattr(test, "s3_url"):
         return add_screenshot_with_s3(test)
     return add_screenshot_with_local(test)
