@@ -121,11 +121,11 @@ class TestRunner:
                 for i, img in enumerate(res.images):
                     if hasattr(res, "s3_url"):
                         if i == 0:
-                            tmp += """<img src="{}" style="display: block;" class="img"/>\n""".format(
+                            tmp += """<img src="{}" style="display: block;" loading="lazy" class="img"/>\n""".format(
                                 img
                             )
                         else:
-                            tmp += """<img src="{}" style="display: none;" class="img"/>\n""".format(
+                            tmp += """<img src="{}" style="display: none;" loading="lazy" class="img"/>\n""".format(
                                 img
                             )
                     else:
@@ -355,8 +355,12 @@ class TestRunner:
         response = wx.send_info(data=data)
         return response
 
-    def weixin_robot_notice(self, webhook):
+    def weixin_robot_notice(self, webhook, notice_users=None):
         res_text = self.__get_notice_content()
+        res_text = f"{res_text}\n\n"
+        notice_users = notice_users or []
+        for user in notice_users:
+            res_text = f"{res_text} <@{user}>"
         data = {
             "msgtype": "markdown",
             "markdown": {"content": res_text},
