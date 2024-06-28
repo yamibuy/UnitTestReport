@@ -357,10 +357,11 @@ class TestRunner:
 
     def weixin_robot_notice(self, webhook, notice_users=None):
         res_text = self.__get_notice_content()
-        res_text = f"{res_text}\n\n"
         notice_users = notice_users or []
-        for user in notice_users:
-            res_text = f"{res_text} <@{user}>"
+        if self.test_result["fail"]:
+            res_text = f"{res_text}\n\n"
+            for user in notice_users:
+                res_text = f"{res_text} <@{user}>"
         data = {
             "msgtype": "markdown",
             "markdown": {"content": res_text},

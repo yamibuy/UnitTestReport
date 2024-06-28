@@ -14,6 +14,7 @@ def add_screenshot_with_local(test):
 
 def add_screenshot_with_s3(test):
     if type(getattr(test, "driver", "")).__name__ == "WebDriver":
+        response = None
         try:
             driver = getattr(test, "driver")
 
