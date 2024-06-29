@@ -38,8 +38,12 @@ def upload_to_s3(s3_url, file_path):
     data = {"type": "common", "channel": "Yamibuy", "local": "local"}
     headers = {"token": "example-token"}
 
-    response = requests.post(s3_url, files=files, data=data, headers=headers)
-    return response.json()
+    try:
+        response = requests.post(s3_url, files=files, data=data, headers=headers)
+        return response.json()
+    except Exception as e:
+        print(f"upload screenshot to s3 error! error:{e}")
+        return {}
 
 
 def add_screenshot(test):
