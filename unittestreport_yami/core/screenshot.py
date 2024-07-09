@@ -19,7 +19,7 @@ def add_screenshot_with_s3(test):
             driver = getattr(test, "driver")
 
             # 创建临时文件
-            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
+            with tempfile.NamedTemporaryFile(suffix=".png") as temp_file:
                 temp_file_path = temp_file.name
                 driver.save_screenshot(temp_file_path)
                 response = upload_to_s3(test.s3_url, temp_file_path)
