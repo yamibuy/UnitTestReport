@@ -1,5 +1,6 @@
 import tempfile
 import requests
+import os
 
 
 def add_screenshot_with_local(test):
@@ -17,9 +18,9 @@ def add_screenshot_with_s3(test):
         response = None
         try:
             driver = getattr(test, "driver")
-
+            temp_file_path = ""
             # 创建临时文件
-            with tempfile.NamedTemporaryFile(suffix=".png") as temp_file:
+            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
                 temp_file_path = temp_file.name
                 driver.save_screenshot(temp_file_path)
                 response = upload_to_s3(test.s3_url, temp_file_path)
@@ -28,6 +29,8 @@ def add_screenshot_with_s3(test):
                     url = body[0].get("url")
                     if url:
                         test.images.append(url)
+            if temp_file_path:
+                os.remove(temp_file_path)
         except Exception as e:
             print(f"upload screenshot to s3 error! response:{response}, error:{e}")
             raise e
