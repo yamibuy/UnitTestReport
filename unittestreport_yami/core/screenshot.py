@@ -15,38 +15,30 @@ def add_screenshot_with_local(test):
 
 def add_screenshot_with_s3(test):
     if type(getattr(test, "driver", "")).__name__ == "WebDriver":
-        response = None
-        try:
-            driver = getattr(test, "driver")
-            temp_file_path = ""
-            # 创建临时文件
-            with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
-                temp_file_path = temp_file.name
-                driver.save_screenshot(temp_file_path)
-                response = upload_to_s3(test.s3_url, temp_file_path)
-                body = response.get("body", [])
-                if body:
-                    url = body[0].get("url")
-                    if url:
-                        test.images.append(url)
-            if temp_file_path:
-                os.remove(temp_file_path)
-        except Exception as e:
-            print(f"upload screenshot to s3 error! response:{response}, error:{e}")
-            raise e
+        driver = getattr(test, "driver")
+        temp_file_path = ""
+        # 创建临时文件
+        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
+            temp_file_path = temp_file.name
+            driver.save_screenshot(temp_file_path)
+            test.images.append(temp_file_path)
 
 
 def upload_to_s3(s3_url, file_path):
-    files = {"file": (file_path, open(file_path, "rb"), "image/jpeg")}
-    data = {"type": "common", "channel": "Yamibuy", "local": "local"}
-    headers = {"token": "example-token"}
-
-    try:
-        response = requests.post(s3_url, files=files, data=data, headers=headers)
-        return response.json()
-    except Exception as e:
-        print(f"upload screenshot to s3 error! error:{e}")
-        return {}
+    url = ""
+    with open(file_path, "rb") as f:
+        files = {"file": (file_path, f, "image/jpeg")}
+        data = {"type": "common", "channel": "Yamibuy", "local": "local"}
+        headers = {"token": "example-token"}
+        try:
+            response = requests.post(s3_url, files=files, data=data, headers=headers)
+            body = response.json().get("body", [])
+            if body:
+                url = body[0].get("url")
+        except Exception as e:
+            print(f"upload screenshot to s3 error! error:{e}")
+    os.remove(file_path)
+    return url
 
 
 def add_screenshot(test):

@@ -5,6 +5,8 @@ import os
 import unittest
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
+
+from unittestreport_yami.core.screenshot import upload_to_s3
 from ..core.testResult import TestResult, ReRunResult
 from ..core.resultPush import DingTalk, WeiXin, SendEmail
 
@@ -47,6 +49,7 @@ class TestRunner:
         desc="测试报告",
         templates=1,
         report_url=None,
+        only_failed=False,
     ):
         """
         :param suites: test suite
@@ -72,6 +75,7 @@ class TestRunner:
         self.result = []
         self.starttime = time.time()
         self.report_url = report_url
+        self.only_failed = only_failed
 
     def __classification_suite(self):
         suites_list = []
@@ -117,16 +121,23 @@ class TestRunner:
             test_result["pass_rate"] = 0
         for res in test_result["results"]:
             if getattr(res, "images", []):
+                if self.only_failed and res.state == "成功":
+                    for img in res.images:
+                        os.remove(img)
+                    res.images = []
                 tmp = ""
                 for i, img in enumerate(res.images):
                     if hasattr(res, "s3_url"):
+                        s3_img_url = upload_to_s3(res.s3_url, img)
+                        if not s3_img_url:
+                            continue
                         if i == 0:
                             tmp += """<img src="{}" style="display: block;" loading="lazy" class="img"/>\n""".format(
-                                img
+                                s3_img_url
                             )
                         else:
                             tmp += """<img src="{}" style="display: none;" loading="lazy" class="img"/>\n""".format(
-                                img
+                                s3_img_url
                             )
                     else:
                         if i == 0:
