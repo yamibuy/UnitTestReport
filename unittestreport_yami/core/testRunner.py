@@ -123,7 +123,8 @@ class TestRunner:
             if getattr(res, "images", []):
                 if self.only_failed and res.state == "成功":
                     for img in res.images:
-                        os.remove(img)
+                        if hasattr(res, "s3_url"):
+                            os.remove(img)
                     res.images = []
                 tmp = ""
                 for i, img in enumerate(res.images):
