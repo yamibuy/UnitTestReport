@@ -4,7 +4,8 @@ import os
 
 
 def add_screenshot_with_local(test):
-    if type(getattr(test, "driver", "")).__name__ == "WebDriver":
+    driver = getattr(test, "driver")
+    if driver:
         try:
             driver = getattr(test, "driver")
             test.images.append(driver.get_screenshot_as_base64())
@@ -14,8 +15,8 @@ def add_screenshot_with_local(test):
 
 
 def add_screenshot_with_s3(test):
-    if type(getattr(test, "driver", "")).__name__ == "WebDriver":
-        driver = getattr(test, "driver")
+    driver = getattr(test, "driver")
+    if driver:
         temp_file_path = ""
         # 创建临时文件
         with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
