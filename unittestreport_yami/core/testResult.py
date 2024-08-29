@@ -91,9 +91,11 @@ class TestResult(unittest.TestResult):
         self.close_driver(test)
 
     def close_driver(self, test):
-        if type(getattr(test, "driver", "")).__name__ == "WebDriver":
+        try:
             driver = getattr(test, "driver")
             driver.quit()
+        except Exception as e:
+            pass
 
     def _log_run_info_to_test(self, test, msg):
         if not hasattr(test, "run_info"):
