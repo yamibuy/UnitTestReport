@@ -4,7 +4,7 @@ import os
 
 
 def add_screenshot_with_local(test):
-    driver = getattr(test, "driver")
+    driver = getattr(test, "driver", None)
     if driver:
         try:
             driver = getattr(test, "driver")
@@ -15,7 +15,7 @@ def add_screenshot_with_local(test):
 
 
 def add_screenshot_with_s3(test):
-    driver = getattr(test, "driver")
+    driver = getattr(test, "driver", None)
     if driver:
         temp_file_path = ""
         # 创建临时文件
@@ -43,6 +43,9 @@ def upload_to_s3(s3_url, file_path):
 
 
 def add_screenshot(test):
+    driver = getattr(test, "driver")
+    if not test.driver:
+        return
     if hasattr(test, "s3_url"):
         return add_screenshot_with_s3(test)
     return add_screenshot_with_local(test)
