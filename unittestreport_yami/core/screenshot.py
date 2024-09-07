@@ -43,9 +43,6 @@ def upload_to_s3(s3_url, file_path):
 
 
 def add_screenshot(test):
-    driver = getattr(test, "driver")
-    if not test.driver:
-        return
     if hasattr(test, "s3_url"):
         return add_screenshot_with_s3(test)
     return add_screenshot_with_local(test)

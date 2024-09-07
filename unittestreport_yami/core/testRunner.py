@@ -121,7 +121,8 @@ class TestRunner:
             test_result["pass_rate"] = 0
         for res in test_result["results"]:
             if getattr(res, "images", []):
-                if self.only_failed and res.state == "成功":
+                status_text = bytes(res.state, "utf-8").decode()
+                if self.only_failed and status_text == "成功":
                     for img in res.images:
                         if hasattr(res, "s3_url"):
                             os.remove(img)
