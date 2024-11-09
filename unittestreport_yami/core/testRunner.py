@@ -50,6 +50,7 @@ class TestRunner:
         templates=1,
         report_url=None,
         only_failed=False,
+        render=True
     ):
         """
         :param suites: test suite
@@ -76,6 +77,7 @@ class TestRunner:
         self.starttime = time.time()
         self.report_url = report_url
         self.only_failed = only_failed
+        self.render = render
 
     def __classification_suite(self):
         suites_list = []
@@ -91,34 +93,7 @@ class TestRunner:
         wrapper(copy.deepcopy(self.suite))
         return suites_list
 
-    def __get_reports(self):
-        print("所有用例执行完毕，正在生成测试报告中......")
-        test_result = {
-            "success": 0,
-            "all": 0,
-            "fail": 0,
-            "skip": 0,
-            "error": 0,
-            "results": [],
-            "testClass": [],
-        }
-        for res in self.result:
-            for item in test_result:
-                test_result[item] += res.fields[item]
-
-        test_result["runtime"] = "{:.2f}s".format(time.time() - self.starttime)
-        test_result["begin_time"] = time.strftime(
-            "%Y-%m-%d %H:%M:%S", time.localtime(self.starttime)
-        )
-        test_result["title"] = self.title
-        test_result["tester"] = self.tester
-        test_result["desc"] = self.desc
-        if test_result["all"] != 0:
-            test_result["pass_rate"] = "{:.2f}".format(
-                test_result["success"] / test_result["all"] * 100
-            )
-        else:
-            test_result["pass_rate"] = 0
+    def __do_with_base_result(self, test_result, render=True):
         for res in test_result["results"]:
             if getattr(res, "images", []):
                 status_text = bytes(res.state, "utf-8").decode()
@@ -168,17 +143,48 @@ class TestRunner:
             template = env.get_template("templates3.html")
         else:
             template = env.get_template("templates.html")
-        file_path = os.path.join(self.report_dir, self.filename)
-        res = template.render(test_result)
-        with open(file_path, "wb") as f:
-            f.write(res.encode("utf8"))
-        print("测试报告已经生成，报告路径为:{}".format(file_path))
-        self.email_conent = {
-            "file": os.path.abspath(file_path),
-            "content": env.get_template("templates03.html").render(test_result),
-        }
-        self.test_result = test_result
+        if render:
+            file_path = os.path.join(self.report_dir, self.filename)
+            res = template.render(test_result)
+            with open(file_path, "wb") as f:
+                f.write(res.encode("utf8"))
+            print("测试报告已经生成，报告路径为:{}".format(file_path))
+            self.email_conent = {
+                "file": os.path.abspath(file_path),
+                "content": env.get_template("templates03.html").render(test_result),
+            }
+            self.test_result = test_result
         return test_result
+
+    def __get_reports(self):
+        print("所有用例执行完毕，组合数据中......")
+        test_result = {
+            "success": 0,
+            "all": 0,
+            "fail": 0,
+            "skip": 0,
+            "error": 0,
+            "results": [],
+            "testClass": [],
+        }
+        for res in self.result:
+            for item in test_result:
+                test_result[item] += res.fields[item]
+
+        test_result["runtime"] = "{:.2f}s".format(time.time() - self.starttime)
+        test_result["begin_time"] = time.strftime(
+            "%Y-%m-%d %H:%M:%S", time.localtime(self.starttime)
+        )
+        test_result["title"] = self.title
+        test_result["tester"] = self.tester
+        test_result["desc"] = self.desc
+        if test_result["all"] != 0:
+            test_result["pass_rate"] = "{:.2f}".format(
+                test_result["success"] / test_result["all"] * 100
+            )
+        else:
+            test_result["pass_rate"] = 0
+        return self.__do_with_base_result(test_result, self.render)
 
     def __handle_history_data(self, test_result):
         """
@@ -381,3 +387,70 @@ class TestRunner:
         }
         response = WeiXin().send_to_bot(webhook, data)
         return response
+
+    def merge_result(self, *other_results):
+        """
+        :param other_results: 可以多个合并,这里的other_result 是 run返回的字典对象
+        """
+        if not self.result:
+            main_result = TestResult()
+            main_result.fields = {
+                "success": 0,
+                "fail": 0,
+                "error": 0,
+                "skip": 0,
+                "all": 0,
+                "results": [],
+                "testClass": [],
+            }
+            main_result.testsRun = 0
+            self.result.append(main_result)
+        else:
+            main_result = self.result[0] 
+
+        for  other_result in other_results:
+            # 合并统计字段
+            for key in ['success', 'fail', 'error', 'skip']:
+                main_result.fields[key] += other_result.get(key, 0)
+            main_result.fields['all'] += other_result.get('all', 0)
+
+            main_result.fields['results'].extend(other_result.get('results', []))
+
+            main_result.fields['testClass'].extend(other_result.get('testClass', []))
+
+        self.__get_merged_reports()
+
+    def __get_merged_reports(self):
+        print("所有用例执行完毕，正在生成测试报告中......")
+        test_result = {
+            "success": 0,
+            "all": 0,
+            "fail": 0,
+            "skip": 0,
+            "error": 0,
+            "results": [],
+            "testClass": [],
+        }
+
+        for res in self.result:
+            for key in ['success', 'fail', 'error', 'skip']:
+                test_result[key] += res.fields.get(key, 0)
+            test_result["all"] += res.fields.get("all", 0)
+            test_result["results"].extend(res.fields.get("results", []))
+            test_result["testClass"].extend(res.fields.get("testClass", []))
+
+        test_result["runtime"] = "{:.2f}s".format(time.time() - self.starttime)
+        test_result["begin_time"] = time.strftime(
+            "%Y-%m-%d %H:%M:%S", time.localtime(self.starttime)
+        )
+        test_result["title"] = self.title
+        test_result["tester"] = self.tester
+        test_result["desc"] = self.desc
+        if test_result["all"] != 0:
+            test_result["pass_rate"] = "{:.2f}".format(
+                test_result["success"] / test_result["all"] * 100
+            )
+        else:
+            test_result["pass_rate"] = 0
+        
+        return self.__do_with_base_result(test_result, True)
