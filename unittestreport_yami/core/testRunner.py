@@ -95,7 +95,7 @@ class TestRunner:
 
     def __do_with_base_result(self, test_result, render=True):
         for res in test_result["results"]:
-            if getattr(res, "images", []):
+            if getattr(res, "images", []) and not getattr(res, "images_processed", False):
                 status_text = bytes(res.state, "utf-8").decode()
                 if self.only_failed and status_text == "成功":
                     for img in res.images:
@@ -127,6 +127,8 @@ class TestRunner:
                             )
                 screenshots_html = IMG_TMPL.format(images=tmp)
                 setattr(res, "screenshots_html", screenshots_html)
+                # Mark images as processed
+                setattr(res, "images_processed", True)
         # 判断是否要生产测试报告
         if os.path.isdir(self.report_dir):
             pass
