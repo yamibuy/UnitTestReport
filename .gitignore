@@ -7,3 +7,4 @@ build/
 .vscode/
 .github/
 unittestreport_yami.egg-info/
+venv/
