@@ -94,6 +94,7 @@ class TestRunner:
         return suites_list
 
     def __do_with_base_result(self, test_result, render=True):
+        print(f"do with base result, render is {render}")
         for res in test_result["results"]:
             if getattr(res, "images", []) and not getattr(res, "images_processed", False):
                 status_text = bytes(res.state, "utf-8").decode()
@@ -103,8 +104,9 @@ class TestRunner:
                             os.remove(img)
                     res.images = []
                 tmp = ""
+
                 for i, img in enumerate(res.images):
-                    if hasattr(res, "s3_url"):
+                    if hasattr(res, "s3_url") and os.path.exists(img):
                         s3_img_url = upload_to_s3(res.s3_url, img)
                         if not s3_img_url:
                             continue
@@ -130,13 +132,10 @@ class TestRunner:
                 # Mark images as processed
                 setattr(res, "images_processed", True)
         # 判断是否要生产测试报告
-        if os.path.isdir(self.report_dir):
-            pass
-        else:
+        if not os.path.isdir(self.report_dir):
             os.mkdir(self.report_dir)
         # 获取历史执行数据
         test_result["history"] = self.__handle_history_data(test_result)
-
         template_path = os.path.join(os.path.dirname(__file__), "../templates")
         env = Environment(loader=FileSystemLoader(template_path))
         if self.templates == 2:

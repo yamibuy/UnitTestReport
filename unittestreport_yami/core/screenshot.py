@@ -34,6 +34,7 @@ def upload_to_s3(s3_url, file_path):
         try:
             response = requests.post(s3_url, files=files, data=data, headers=headers)
             body = response.json().get("body", [])
+            print(f"upload screenshot to s3 scuccess! :{file_path}")
             if body:
                 url = body[0].get("url")
         except Exception as e:
@@ -43,6 +44,9 @@ def upload_to_s3(s3_url, file_path):
 
 
 def add_screenshot(test):
-    if hasattr(test, "s3_url"):
-        return add_screenshot_with_s3(test)
-    return add_screenshot_with_local(test)
+    try:
+        if hasattr(test, "s3_url"):
+            return add_screenshot_with_s3(test)
+        return add_screenshot_with_local(test)
+    except Exception as e:
+        print(f"add screenshot error! error:{e}")

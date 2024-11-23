@@ -129,7 +129,7 @@ class ReRunResult(TestResult):
         if not hasattr(test, "count"):
             test.count = 0
         if test.count < self.count:
-            self.close_driver(test)
+            self._add_screen_shot_in_test(test)
             test.count += 1
             msg = f"{test}执行——>【失败Failure】\n"
             self._log_run_info_to_test(test, msg)
@@ -154,7 +154,7 @@ class ReRunResult(TestResult):
         if not hasattr(test, "count"):
             test.count = 0
         if test.count < self.count:
-            self.close_driver(test)
+            self._add_screen_shot_in_test(test)
             test.count += 1
             msg = f"{test}执行——>【错误Error】\n"
             self._log_run_info_to_test(test, msg)
