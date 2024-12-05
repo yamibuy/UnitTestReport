@@ -1,6 +1,8 @@
 import tempfile
 import requests
 import os
+from PIL import Image
+import io
 
 
 def add_screenshot_with_local(test):
@@ -18,10 +20,26 @@ def add_screenshot_with_s3(test):
     driver = getattr(test, "driver", None)
     if driver:
         temp_file_path = ""
-        # 创建临时文件
-        with tempfile.NamedTemporaryFile(suffix=".png", delete=False) as temp_file:
+        # 创建临时文件，使用.webp后缀
+        with tempfile.NamedTemporaryFile(suffix=".webp", delete=False) as temp_file:
             temp_file_path = temp_file.name
-            driver.save_screenshot(temp_file_path)
+            temp_dir = os.path.dirname(temp_file_path)
+            
+            # 检查目录下的图片数量
+            image_count = sum(1 for f in os.listdir(temp_dir) if f.lower().endswith(('.webp', '.png')))
+            if image_count >= 10000:
+                print(f"警告：目录 {temp_dir} 中的图片数量已达到{image_count}张，超过限制，不再保存新的截图")
+                return
+                
+            # 获取截图为PNG格式的二进制数据
+            png_data = driver.get_screenshot_as_png()
+            # 在内存中用PIL处理图片
+            img = Image.open(io.BytesIO(png_data))
+            # 转换为WebP格式并保存，quality参数范围是0-100，可以根据需要调整
+            img.save(temp_file_path, format='WEBP', quality=30, method=6)
+            # # 获取并打印文件大小
+            # file_size = os.path.getsize(temp_file_path)
+            # print(f"WebP格式截图大小: {file_size/1024/1024:.2f}MB ({file_size/1024:.2f}KB)")
             test.images.append(temp_file_path)
 
 
