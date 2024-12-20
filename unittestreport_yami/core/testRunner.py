@@ -6,7 +6,7 @@ import unittest
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
 
-from unittestreport_yami.core.screenshot import upload_to_s3
+from unittestreport_yami.core.screenshot import upload_img_to_s3, upload_report_to_s3
 from ..core.testResult import TestResult, ReRunResult
 from ..core.resultPush import DingTalk, WeiXin, SendEmail
 
@@ -50,7 +50,8 @@ class TestRunner:
         templates=1,
         report_url=None,
         only_failed=False,
-        render=True
+        upload_report_to_s3=False,
+        render=True,
     ):
         """
         :param suites: test suite
@@ -78,6 +79,7 @@ class TestRunner:
         self.report_url = report_url
         self.only_failed = only_failed
         self.render = render
+        self.upload_report_to_s3 = upload_report_to_s3
 
     def __classification_suite(self):
         suites_list = []
@@ -95,8 +97,13 @@ class TestRunner:
 
     def __do_with_base_result(self, test_result, render=True):
         print(f"do with base result, render is {render}")
+        s3_url = ""
         for res in test_result["results"]:
-            if getattr(res, "images", []) and not getattr(res, "images_processed", False):
+            if not s3_url and hasattr(res, "s3_url"):
+                s3_url = res.s3_url
+            if getattr(res, "images", []) and not getattr(
+                res, "images_processed", False
+            ):
                 status_text = bytes(res.state, "utf-8").decode()
                 if self.only_failed and status_text == "成功":
                     for img in res.images:
@@ -107,7 +114,7 @@ class TestRunner:
 
                 for i, img in enumerate(res.images):
                     if hasattr(res, "s3_url") and os.path.exists(img):
-                        s3_img_url = upload_to_s3(res.s3_url, img)
+                        s3_img_url = upload_img_to_s3(res.s3_url, img)
                         if not s3_img_url:
                             continue
                         if i == 0:
@@ -149,7 +156,13 @@ class TestRunner:
             res = template.render(test_result)
             with open(file_path, "wb") as f:
                 f.write(res.encode("utf8"))
-            print("测试报告已经生成，报告路径为:{}".format(file_path))
+            if self.upload_report_to_s3:
+                self.report_s3_url = upload_report_to_s3(
+                    s3_url=s3_url, file_path=file_path
+                )
+                print("测试报告已经生成，报告路径为:{}".format(self.report_s3_url))
+            else:
+                print("测试报告已经生成，报告路径为:{}".format(file_path))
             self.email_conent = {
                 "file": os.path.abspath(file_path),
                 "content": env.get_template("templates03.html").render(test_result),
@@ -222,7 +235,10 @@ class TestRunner:
         """获取通知的内容"""
         template_path = os.path.join(os.path.dirname(__file__), "../templates")
         env = Environment(loader=FileSystemLoader(template_path))
-        if self.report_url:
+        if self.report_s3_url:
+            template = env.get_template("remote_report.md")
+            self.test_result["report_address"] = self.report_s3_url
+        elif self.report_url:
             template = env.get_template("remote_report.md")
             report_address = f"{self.report_url}/{self.filename}"
             report_address = report_address.replace("\\", "/")
@@ -407,17 +423,17 @@ class TestRunner:
             main_result.testsRun = 0
             self.result.append(main_result)
         else:
-            main_result = self.result[0] 
+            main_result = self.result[0]
 
-        for  other_result in other_results:
+        for other_result in other_results:
             # 合并统计字段
-            for key in ['success', 'fail', 'error', 'skip']:
+            for key in ["success", "fail", "error", "skip"]:
                 main_result.fields[key] += other_result.get(key, 0)
-            main_result.fields['all'] += other_result.get('all', 0)
+            main_result.fields["all"] += other_result.get("all", 0)
 
-            main_result.fields['results'].extend(other_result.get('results', []))
+            main_result.fields["results"].extend(other_result.get("results", []))
 
-            main_result.fields['testClass'].extend(other_result.get('testClass', []))
+            main_result.fields["testClass"].extend(other_result.get("testClass", []))
 
         self.__get_merged_reports()
 
@@ -434,7 +450,7 @@ class TestRunner:
         }
 
         for res in self.result:
-            for key in ['success', 'fail', 'error', 'skip']:
+            for key in ["success", "fail", "error", "skip"]:
                 test_result[key] += res.fields.get(key, 0)
             test_result["all"] += res.fields.get("all", 0)
             test_result["results"].extend(res.fields.get("results", []))
@@ -453,5 +469,5 @@ class TestRunner:
             )
         else:
             test_result["pass_rate"] = 0
-        
+
         return self.__do_with_base_result(test_result, True)
