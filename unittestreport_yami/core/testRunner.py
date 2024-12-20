@@ -80,6 +80,7 @@ class TestRunner:
         self.only_failed = only_failed
         self.render = render
         self.upload_report_to_s3 = upload_report_to_s3
+        self.report_s3_url = ""
 
     def __classification_suite(self):
         suites_list = []
