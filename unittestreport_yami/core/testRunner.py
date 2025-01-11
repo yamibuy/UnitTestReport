@@ -170,6 +170,12 @@ class TestRunner:
             }
             self.test_result = test_result
         return test_result
+    
+    def seconds_to_hms(self, seconds):
+        hours = seconds // 3600
+        minutes = (seconds % 3600) // 60
+        seconds = seconds % 60
+        return f"{hours:02}h {minutes:02}m {seconds:02}s"
 
     def __get_reports(self):
         print("所有用例执行完毕，组合数据中......")
@@ -186,7 +192,10 @@ class TestRunner:
             for item in test_result:
                 test_result[item] += res.fields[item]
 
-        test_result["runtime"] = "{:.2f}s".format(time.time() - self.starttime)
+        execute_duration_seconds = time.time() - self.starttime
+        execute_duration_string = self.seconds_to_hms(execute_duration_seconds)
+        test_result["runtime"] = execute_duration_string
+        # test_result["runtime"] = "{:.2f}s".format(time.time() - self.starttime)
         test_result["begin_time"] = time.strftime(
             "%Y-%m-%d %H:%M:%S", time.localtime(self.starttime)
         )
