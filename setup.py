@@ -5,7 +5,7 @@ with open("readme.md", "r", encoding="utf8") as fh:
 
 setup(
     name="unittestreport_yami",
-    version="0.1.42",
+    version="0.1.43",
     author="Ethan",
     author_email="ethan.liu@yamibuy.com",
     url="https://github.com/EthanLiuInyami/UnitTestReport",

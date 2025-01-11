@@ -172,10 +172,14 @@ class TestRunner:
         return test_result
     
     def seconds_to_hms(self, seconds):
-        hours = seconds // 3600
-        minutes = (seconds % 3600) // 60
-        seconds = seconds % 60
-        return f"{hours:02}h {minutes:02}m {seconds:02}s"
+        hours = int(seconds // 3600)
+        minutes = int((seconds % 3600) // 60)
+        seconds = int(seconds % 60)
+        result = ""
+        if hours > 0:
+            result += f"{hours}h"
+        result += f"{minutes}m {seconds}s"
+        return result
 
     def __get_reports(self):
         print("所有用例执行完毕，组合数据中......")
