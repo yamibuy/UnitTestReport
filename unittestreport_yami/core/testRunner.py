@@ -470,7 +470,10 @@ class TestRunner:
             test_result["results"].extend(res.fields.get("results", []))
             test_result["testClass"].extend(res.fields.get("testClass", []))
 
-        test_result["runtime"] = "{:.2f}s".format(time.time() - self.starttime)
+        execute_duration_seconds = time.time() - self.starttime
+        execute_duration_string = self.seconds_to_hms(execute_duration_seconds)
+        test_result["runtime"] = execute_duration_string
+        # test_result["runtime"] = "{:.2f}s".format(time.time() - self.starttime)
         test_result["begin_time"] = time.strftime(
             "%Y-%m-%d %H:%M:%S", time.localtime(self.starttime)
         )
