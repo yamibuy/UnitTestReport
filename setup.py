@@ -3,9 +3,16 @@ from setuptools import setup, find_packages
 with open("readme.md", "r", encoding="utf8") as fh:
     long_description = fh.read()
 
+# 读取更新说明
+with open("CHANGELOG.md", "r", encoding="utf8") as fh:
+    changelog = fh.read()
+
+# 将更新说明添加到长描述中
+long_description = f"{long_description}\n\n## Changelog\n{changelog}"
+
 setup(
     name="unittestreport_yami",
-    version="0.1.44",
+    version="0.1.45",
     author="Ethan",
     author_email="ethan.liu@yamibuy.com",
     url="https://github.com/EthanLiuInyami/UnitTestReport",
