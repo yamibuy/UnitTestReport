@@ -5,6 +5,7 @@ import os
 import unittest
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
+import fcntl
 
 from unittestreport_yami.core.screenshot import upload_img_to_s3, upload_report_to_s3
 from ..core.testResult import TestResult, ReRunResult
@@ -219,31 +220,59 @@ class TestRunner:
         处理历史数据
         :return:
         """
-        try:
-            with open(
-                os.path.join(self.report_dir, "history.json"), "r", encoding="utf-8"
-            ) as f:
-                history = json.load(f)
-        except FileNotFoundError as e:
-            history = []
-        history.append(
-            {
-                "success": test_result["success"],
-                "all": test_result["all"],
-                "fail": test_result["fail"],
-                "skip": test_result["skip"],
-                "error": test_result["error"],
-                "runtime": test_result["runtime"],
-                "begin_time": test_result["begin_time"],
-                "pass_rate": test_result["pass_rate"],
-            }
-        )
+        history_file = os.path.join(self.report_dir, "history.json")
+        
+        # 确保目录存在
+        if not os.path.exists(self.report_dir):
+            os.makedirs(self.report_dir)
+            
+        # 如果文件不存在，创建一个包含空列表的json文件
+        if not os.path.exists(history_file):
+            with open(history_file, "w", encoding="utf-8") as f:
+                json.dump([], f)
 
-        with open(
-            os.path.join(self.report_dir, "history.json"), "w", encoding="utf-8"
-        ) as f:
-            json.dump(history, f, ensure_ascii=True)
-        return history
+        try:
+            with open(history_file, "r+", encoding="utf-8") as f:
+                # 获取文件锁
+                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                try:
+                    # 读取历史数据
+                    try:
+                        history = json.load(f)
+                        if not isinstance(history, list):
+                            history = []
+                    except json.JSONDecodeError:
+                        history = []
+                    
+                    # 添加新的测试结果
+                    history.append(
+                        {
+                            "success": test_result["success"],
+                            "all": test_result["all"],
+                            "fail": test_result["fail"],
+                            "skip": test_result["skip"],
+                            "error": test_result["error"],
+                            "runtime": test_result["runtime"],
+                            "begin_time": test_result["begin_time"],
+                            "pass_rate": test_result["pass_rate"],
+                        }
+                    )
+                    
+                    # 清空文件内容
+                    f.seek(0)
+                    f.truncate()
+                    
+                    # 写入更新后的数据
+                    json.dump(history, f, ensure_ascii=True)
+                    
+                finally:
+                    # 释放文件锁
+                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                    
+                return history
+        except Exception as e:
+            print(f"Warning: Failed to handle history data: {str(e)}")
+            return []
 
     def __get_notice_content(self):
         """获取通知的内容"""
