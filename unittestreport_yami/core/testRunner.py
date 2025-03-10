@@ -5,7 +5,41 @@ import os
 import unittest
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
-import fcntl
+# 删除 fcntl 导入
+# import fcntl
+
+# 添加跨平台文件锁实现
+import platform
+
+if platform.system() == 'Windows':
+    import msvcrt
+    
+    def lock_file(f):
+        try:
+            msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
+        except:
+            pass
+
+    def unlock_file(f):
+        try:
+            f.seek(0)
+            msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
+        except:
+            pass
+else:
+    import fcntl
+    
+    def lock_file(f):
+        try:
+            fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+        except:
+            pass
+
+    def unlock_file(f):
+        try:
+            fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+        except:
+            pass
 
 from unittestreport_yami.core.screenshot import upload_img_to_s3, upload_report_to_s3
 from ..core.testResult import TestResult, ReRunResult
@@ -233,8 +267,8 @@ class TestRunner:
 
         try:
             with open(history_file, "r+", encoding="utf-8") as f:
-                # 获取文件锁
-                fcntl.flock(f.fileno(), fcntl.LOCK_EX)
+                # 使用跨平台的文件锁
+                lock_file(f)
                 try:
                     # 读取历史数据
                     try:
@@ -245,18 +279,16 @@ class TestRunner:
                         history = []
                     
                     # 添加新的测试结果
-                    history.append(
-                        {
-                            "success": test_result["success"],
-                            "all": test_result["all"],
-                            "fail": test_result["fail"],
-                            "skip": test_result["skip"],
-                            "error": test_result["error"],
-                            "runtime": test_result["runtime"],
-                            "begin_time": test_result["begin_time"],
-                            "pass_rate": test_result["pass_rate"],
-                        }
-                    )
+                    history.append({
+                        "success": test_result["success"],
+                        "all": test_result["all"],
+                        "fail": test_result["fail"],
+                        "skip": test_result["skip"],
+                        "error": test_result["error"],
+                        "runtime": test_result["runtime"],
+                        "begin_time": test_result["begin_time"],
+                        "pass_rate": test_result["pass_rate"],
+                    })
                     
                     # 清空文件内容
                     f.seek(0)
@@ -264,10 +296,9 @@ class TestRunner:
                     
                     # 写入更新后的数据
                     json.dump(history, f, ensure_ascii=True)
-                    
                 finally:
                     # 释放文件锁
-                    fcntl.flock(f.fileno(), fcntl.LOCK_UN)
+                    unlock_file(f)
                     
                 return history
         except Exception as e:
