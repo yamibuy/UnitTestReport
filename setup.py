@@ -12,7 +12,7 @@ long_description = f"{long_description}\n\n## Changelog\n{changelog}"
 
 setup(
     name="unittestreport_yami",
-    version="0.1.45",
+    version="0.1.47",
     author="Ethan",
     author_email="ethan.liu@yamibuy.com",
     url="https://github.com/EthanLiuInyami/UnitTestReport",
