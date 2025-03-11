@@ -5,15 +5,16 @@ import os
 import unittest
 import time
 from concurrent.futures.thread import ThreadPoolExecutor
+
 # 删除 fcntl 导入
 # import fcntl
 
 # 添加跨平台文件锁实现
 import platform
 
-if platform.system() == 'Windows':
+if platform.system() == "Windows":
     import msvcrt
-    
+
     def lock_file(f):
         try:
             msvcrt.locking(f.fileno(), msvcrt.LK_NBLCK, 1)
@@ -26,9 +27,10 @@ if platform.system() == 'Windows':
             msvcrt.locking(f.fileno(), msvcrt.LK_UNLCK, 1)
         except:
             pass
+
 else:
     import fcntl
-    
+
     def lock_file(f):
         try:
             fcntl.flock(f.fileno(), fcntl.LOCK_EX)
@@ -40,6 +42,7 @@ else:
             fcntl.flock(f.fileno(), fcntl.LOCK_UN)
         except:
             pass
+
 
 from unittestreport_yami.core.screenshot import upload_img_to_s3, upload_report_to_s3
 from ..core.testResult import TestResult, ReRunResult
@@ -178,7 +181,7 @@ class TestRunner:
         if not os.path.isdir(self.report_dir):
             os.mkdir(self.report_dir)
         # 获取历史执行数据
-        test_result["history"] = self.__handle_history_data(test_result)
+        # test_result["history"] = self.__handle_history_data(test_result)
         template_path = os.path.join(os.path.dirname(__file__), "../templates")
         env = Environment(loader=FileSystemLoader(template_path))
         if self.templates == 2:
@@ -205,7 +208,7 @@ class TestRunner:
             }
             self.test_result = test_result
         return test_result
-    
+
     def seconds_to_hms(self, seconds):
         hours = int(seconds // 3600)
         minutes = int((seconds % 3600) // 60)
@@ -255,11 +258,11 @@ class TestRunner:
         :return:
         """
         history_file = os.path.join(self.report_dir, "history.json")
-        
+
         # 确保目录存在
         if not os.path.exists(self.report_dir):
             os.makedirs(self.report_dir)
-            
+
         # 如果文件不存在，创建一个包含空列表的json文件
         if not os.path.exists(history_file):
             with open(history_file, "w", encoding="utf-8") as f:
@@ -277,29 +280,31 @@ class TestRunner:
                             history = []
                     except json.JSONDecodeError:
                         history = []
-                    
+
                     # 添加新的测试结果
-                    history.append({
-                        "success": test_result["success"],
-                        "all": test_result["all"],
-                        "fail": test_result["fail"],
-                        "skip": test_result["skip"],
-                        "error": test_result["error"],
-                        "runtime": test_result["runtime"],
-                        "begin_time": test_result["begin_time"],
-                        "pass_rate": test_result["pass_rate"],
-                    })
-                    
+                    history.append(
+                        {
+                            "success": test_result["success"],
+                            "all": test_result["all"],
+                            "fail": test_result["fail"],
+                            "skip": test_result["skip"],
+                            "error": test_result["error"],
+                            "runtime": test_result["runtime"],
+                            "begin_time": test_result["begin_time"],
+                            "pass_rate": test_result["pass_rate"],
+                        }
+                    )
+
                     # 清空文件内容
                     f.seek(0)
                     f.truncate()
-                    
+
                     # 写入更新后的数据
                     json.dump(history, f, ensure_ascii=True)
                 finally:
                     # 释放文件锁
                     unlock_file(f)
-                    
+
                 return history
         except Exception as e:
             print(f"Warning: Failed to handle history data: {str(e)}")
