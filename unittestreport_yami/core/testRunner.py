@@ -184,9 +184,9 @@ class TestRunner:
         # test_result["history"] = self.__handle_history_data(test_result)
         template_path = os.path.join(os.path.dirname(__file__), "../templates")
         env = Environment(loader=FileSystemLoader(template_path))
-        if self.templates == 2:
-            template = env.get_template("templates2.html")
-        elif self.templates == 3:
+        # if self.templates == 2:
+        #     template = env.get_template("templates2.html")
+        if self.templates == 3:
             template = env.get_template("templates3.html")
         else:
             template = env.get_template("templates.html")
