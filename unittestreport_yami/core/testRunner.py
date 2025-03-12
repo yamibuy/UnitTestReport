@@ -43,6 +43,18 @@ else:
         except:
             pass
 
+# 临时方案，jenkins中的覆盖代码中的env
+jenkins_vars = {
+    'jenkins_env': 'env',
+    'jenkins_run_mode': 'run_mode', 
+    'jenkins_webdriver_hub_env': 'webdriver_hub_env',
+    'jenkins_wechat_notice_env': 'wechat_notice_env'
+}
+
+for jenkins_key, env_key in jenkins_vars.items():
+    if jenkins_key in os.environ:
+        os.environ[env_key] = os.environ[jenkins_key]
+
 
 from unittestreport_yami.core.screenshot import upload_img_to_s3, upload_report_to_s3
 from ..core.testResult import TestResult, ReRunResult
