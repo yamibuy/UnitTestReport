@@ -29,7 +29,7 @@ def add_screenshot_with_s3(test):
             image_count = sum(
                 1 for f in os.listdir(temp_dir) if f.lower().endswith((".webp", ".png"))
             )
-            if image_count >= 10000:
+            if image_count >= 100000:
                 print(
                     f"警告：目录 {temp_dir} 中的图片数量已达到{image_count}张，超过限制，不再保存新的截图"
                 )
